@@ -9,6 +9,11 @@ NUMERIC_COLUMNS = [
     "AW_SHORT",
 ]
 
+RANGES = {
+    "SALT": (0, 100),
+    "AW": (0, 1),
+}
+
 
 def load_csv(file):
     """
@@ -61,10 +66,23 @@ def load_csv(file):
 
     discarded_rows = total_rows - valid_rows
 
+    #
+    # Segundo filtrado: valores fuera de rango -> NaN
+    # (solo se elimina el valor, no la fila)
+    #
+    discarded_values = 0
+
+    for column in NUMERIC_COLUMNS:
+        low, high = RANGES[column.split("_")[0]]
+        out_of_range = (df[column] < low) | (df[column] > high)
+        discarded_values += int(out_of_range.sum())
+        df.loc[out_of_range, column] = float("nan")
+
     stats = {
         "total_rows": total_rows,
         "valid_rows": valid_rows,
         "discarded_rows": discarded_rows,
+        "discarded_values": discarded_values,
     }
 
     return df, stats
